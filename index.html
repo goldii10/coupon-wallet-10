@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+  <template id="__bundler_thumbnail" data-bg-color="#0c66d6">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="#0c66d6"></rect><rect x="30" y="42" width="60" height="36" rx="8" fill="#facc15"></rect><rect x="30" y="54" width="60" height="6" fill="#0c66d6"></rect></svg>
+  </template>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .monospaced { font-family: monospace; letter-spacing: 2px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .scroll-container { overflow-y: auto; height: calc(100vh - 64px); padding-bottom: 20px; -ms-overflow-style: none; scrollbar-width: none; }
+    .scroll-container::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+<sc-if value="{{showOnboarding}}" hint-placeholder-val="{{false}}">
+  <div dir="rtl" class="max-w-md mx-auto min-h-screen relative flex flex-col items-center justify-center px-8 py-12 text-center bg-white overflow-hidden">
+    <div class="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-[#10a345]/10"></div>
+    <div class="absolute -bottom-20 -right-10 w-72 h-72 rounded-full bg-[#0c66d6]/10"></div>
+    <div class="relative z-10 w-16 h-16 rounded-2xl bg-[#0c66d6] flex items-center justify-center text-3xl mb-8 shadow-lg">🎟️</div>
+    <h1 class="relative z-10 text-3xl font-black mb-6 text-[#152e53] leading-snug">ארנק קופונים</h1>
+    <p class="relative z-10 text-lg font-semibold leading-relaxed mb-2 text-zinc-800">לא נמאס לכם שהקופונים שלך מתפספסים ואתם מפסידים כסף.</p>
+    <p class="relative z-10 text-base text-zinc-500 leading-relaxed mb-10">האפליקציה הזאת תתן לכם לנהל את הקופונים שלכם ותגרום לכך שלא תפספסו יותר</p>
+    <div class="relative z-10 w-full space-y-3">
+      <input type="email" value="{{onboardingEmail}}" onChange="{{onOnboardingEmailChange}}" placeholder="הכניסו את הג'ימייל שלכם" class="w-full bg-[#f4f5f7] text-zinc-900 rounded-xl px-4 py-3.5 text-sm text-center focus:outline-none border border-zinc-200" dir="ltr">
+      <sc-if value="{{onboardingError}}"><div class="text-red-600 text-sm font-bold">{{onboardingError}}</div></sc-if>
+      <button onClick="{{onOnboardingSubmit}}" class="w-full bg-[#0c66d6] text-white font-bold py-3.5 rounded-xl shadow-md transition text-lg">בואו נתחיל</button>
+    </div>
+  </div>
+</sc-if>
+<sc-if value="{{showApp}}" hint-placeholder-val="{{true}}">
+<div dir="rtl" class="max-w-md mx-auto bg-[#f5f8fc] min-h-screen relative shadow-lg h-full flex flex-col">
+  <div class="flex justify-between items-center py-4 px-5 bg-[#f5f8fc] sticky top-0 z-20">
+    <h1 class="text-2xl font-black text-[#152e53]">ארנק קופונים</h1>
+    <button onClick="{{goAddCoupon}}" class="bg-[#0b5cbe] text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-sm">+ הוספה</button>
+  </div>
+
+  <div class="scroll-container px-5 pb-20">
+
+    <sc-if value="{{isHome}}" hint-placeholder-val="{{true}}">
+      <div class="space-y-6">
+        <div class="bg-[#0c66d6] text-white rounded-3xl p-5 shadow-lg text-center relative overflow-hidden" style="background-color: #0A5CBE">
+          <div class="text-right mb-1 font-semibold text-sm">שלום 👋</div>
+          <h2 class="text-3xl font-black mb-2" style="font-family: system-ui">יש לכם {{activeCount}} קופונים פעילים</h2>
+          <p class="text-sm text-blue-100 mb-5">הכול תחת שליטה. שום הטבה לא הולכת לאיבוד.</p>
+          <div class="flex justify-center gap-3">
+            <button onClick="{{goMarket}}" class="border-2 border-white/30 hover:border-white bg-white/10 px-5 py-2 rounded-full font-bold transition">שוק הקופונים</button>
+            <button onClick="{{goAddCoupon}}" class="bg-[#facc15] hover:bg-[#eab308] text-zinc-900 px-5 py-2 rounded-full font-bold transition">+ הוספת קופון</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-zinc-900">הקופונים שלי</h3>
+            <button onClick="{{goAllCoupons}}" class="text-[#0c66d6] text-sm font-bold flex items-center gap-1">לכל הקופונים <span class="text-lg leading-none mt-[-2px]">←</span></button>
+          </div>
+          <div class="flex justify-end items-center gap-2 mb-3">
+            <label class="text-xs text-zinc-500 font-medium">מיון:</label>
+            <select value="{{homeSortBy}}" onChange="{{onHomeSortChange}}" class="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-zinc-700 focus:outline-none">
+              <option value="expiry">לפי תוקף קרוב</option>
+              <option value="name">לפי שם חנות (א-ת)</option>
+              <option value="newest">לפי הכי חדש</option>
+            </select>
+          </div>
+          <sc-if value="{{hasHomeCoupons}}" hint-placeholder-val="{{true}}">
+            <div>
+              <sc-for list="{{homeCoupons}}" as="coupon" hint-placeholder-count="2">
+                <div class="relative rounded-2xl overflow-hidden h-40 mb-4 shadow-md" style="border: 4px solid #1e293b">
+                  <div class="absolute top-2 right-2 z-20 flex gap-1.5">
+                    <sc-if value="{{coupon.canMarkUsed}}">
+                      <button onClick="{{coupon.onMarkUsed}}" title="סמן כנוצל" class="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white text-sm backdrop-blur-sm">✓</button>
+                    </sc-if>
+                    <button onClick="{{coupon.onDelete}}" title="מחק קופון" class="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white text-sm backdrop-blur-sm">🗑</button>
+                  </div>
+                  <div class="relative z-10 p-4 h-full flex flex-col justify-between" style="background-color: #FFC500">
+                    <div class="flex justify-between items-start pr-16">
+                      <div class="w-8 h-8 rounded-full bg-white/10 shrink-0"></div>
+                      <div class="text-right">
+                        <div class="text-white font-bold {{coupon.storeNameSizeClass}}" style="text-align: left">{{coupon.storeName}}</div>
+                        <div class="text-[#facc15] font-bold text-sm" style="color: #000000">{{coupon.discountText}}</div>
+                      </div>
+                    </div>
+                    <div class="flex justify-center">
+                      <sc-if value="{{coupon.code}}">
+                        <button onClick="{{coupon.onCopy}}" onTouchStart="{{coupon.onCopyTouchStart}}" onTouchEnd="{{coupon.onCopyTouchEnd}}" class="bg-white/10 text-[#facc15] monospaced tracking-widest px-6 py-1.5 rounded-full text-lg border border-[#facc15]/30 font-bold" style="color: #080700">
+                          <sc-if value="{{coupon.copied}}">✓ הועתק</sc-if>
+                          <sc-if value="{{coupon.notCopied}}">{{coupon.code}}</sc-if>
+                        </button>
+                      </sc-if>
+                      <sc-if value="{{coupon.codeNote}}">
+                        <span class="bg-white/10 text-white/90 text-xs px-4 py-1.5 rounded-full border border-white/15 text-center" style="color: #101010E6; text-align: right">{{coupon.codeNote}}</span>
+                      </sc-if>
+                    </div>
+                    <div class="flex justify-between items-end">
+                      <span class="text-[#cbd5e1] text-xs" style="color: #000000">בתוקף עד: {{coupon.expirationDate}}</span>
+                      <span class="bg-[#facc15] text-[#1e293b] text-xs font-bold px-3 py-1 rounded-full">{{coupon.badgeText}}</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{noHomeCoupons}}">
+            <div class="text-center text-zinc-400 py-8 text-sm">אין לכם קופונים פעילים כרגע</div>
+          </sc-if>
+        </div>
+
+        <div class="pt-4 border-t border-zinc-100">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-xl font-bold text-zinc-900">מבחר משוק הקופונים 🛍️</h3>
+            <button onClick="{{goMarket}}" class="text-[#0c66d6] text-sm font-bold flex items-center gap-1">לשוק המלא <span class="text-lg leading-none mt-[-2px]">←</span></button>
+          </div>
+          <sc-if value="{{hasHomePreview}}" hint-placeholder-val="{{true}}">
+            <div class="space-y-3">
+              <sc-for list="{{homePreviewItems}}" as="item" hint-placeholder-count="2">
+                <div class="bg-white rounded-2xl p-4 flex justify-between items-center mb-3 shadow-[0_2px_10px_rgba(20,60,120,0.06)]">
+                  <div class="text-right">
+                    <div class="font-bold text-zinc-900">{{item.storeName}}</div>
+                    <div class="text-[#104886] font-bold text-sm mt-0.5">{{item.discountText}}</div>
+                    <div class="flex items-center text-xs text-zinc-500 mt-2 gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                      <span>{{item.expirationDate}}</span><span>·</span><span>נותרו {{item.daysRemainingCalc}} ימים</span>
+                    </div>
+                    <sc-if value="{{item.subText}}"><div class="text-xs text-zinc-400 mt-0.5">{{item.subText}}</div></sc-if>
+                  </div>
+                  <div>
+                    <button onClick="{{item.onAdd}}" class="bg-[#10a345] hover:bg-[#0e8f3d] text-white px-4 py-2 rounded-xl text-sm font-bold transition">+ הוסף לארנק</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{noHomePreview}}">
+            <div class="text-center text-zinc-400 py-6 text-sm">כל ההטבות המומלצות כבר בארנק שלכם 🎉</div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isAddCoupon}}" hint-placeholder-val="{{false}}">
+      <div class="space-y-6 max-w-sm mx-auto">
+        <h2 class="text-2xl font-black text-center text-zinc-900 mb-6">הוספת קופון חדש</h2>
+        <div class="space-y-4">
+          <div onClick="{{startScan}}" class="bg-[#f4f5f7] border border-zinc-200 rounded-2xl p-4 flex justify-between items-center cursor-pointer shadow-sm" style="background-color: #090000">
+            <div class="text-right">
+              <h3 class="font-bold text-zinc-900" style="color: #FFFFFF">1. סריקת ברקוד</h3>
+              <p class="text-xs text-zinc-500 mt-1" style="color: #FFFFFF">פתיחת מצלמה וסריקה אוטומטית</p>
+            </div>
+            <div class="w-12 h-12 bg-[#0c66d6] rounded-full flex items-center justify-center text-white shrink-0 text-xl">📷</div>
+          </div>
+          <div onClick="{{onPasteClick}}" class="bg-[#f4f5f7] border border-zinc-200 rounded-2xl p-4 flex justify-between items-center cursor-pointer shadow-sm" style="background-color: #000000">
+            <div class="text-right">
+              <h3 class="font-bold text-zinc-900" style="color: #FFFFFF">2. הדבקה מהלוח</h3>
+              <p class="text-xs text-zinc-500 mt-1" style="color: #FFFFFF">זיהוי קוד קופון שהעברתם מאימייל/וואטסאפ</p>
+            </div>
+            <div class="w-12 h-12 bg-[#22c55e] rounded-full flex items-center justify-center text-white shrink-0 text-xl">📋</div>
+          </div>
+
+          <div class="bg-[#f4f5f7] border border-zinc-200 rounded-2xl p-5 mt-2 shadow-sm" style="background-color: #000000">
+            <h3 class="font-bold text-zinc-900 text-center mb-4" style="color: #F2F2FF">3. הזנה ידנית</h3>
+            <sc-if value="{{formError}}"><div class="text-red-600 text-sm text-center font-bold mb-3">{{formError}}</div></sc-if>
+            <div class="space-y-4 text-right">
+              <div>
+                <label class="block text-xs font-bold text-zinc-700 mb-1.5 ml-1" style="color: #F5F5FF">שם החנות</label>
+                <input type="text" value="{{formStore}}" onChange="{{onFormStore}}" placeholder="למשל: סופר-פארם, KSP" class="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#0c66d6] transition">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-zinc-700 mb-1.5 ml-1" style="color: #FFFFFF">קוד הקופון</label>
+                <input type="text" value="{{formCode}}" onChange="{{onFormCode}}" placeholder="הזינו את קוד הקופון" class="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#0c66d6] transition monospaced">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-zinc-700 mb-1.5 ml-1" style="color: #FFFFFF">סוג ההנחה</label>
+                <select value="{{formType}}" onChange="{{onFormType}}" class="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#0c66d6] transition appearance-none">
+                  <option value="אחוז הנחה">אחוז הנחה</option>
+                  <option value="סכום קבוע">סכום קבוע</option>
+                  <option value="הטבה במתנה">הטבה במתנה</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-zinc-700 mb-1.5 ml-1" style="color: #FFFFFF">פירוט / ערך ההנחה</label>
+                <input type="text" value="{{formValue}}" onChange="{{onFormValue}}" placeholder="למשל: 20, 50, ארוחת בוקר מתנה" class="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#0c66d6] transition">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-zinc-700 mb-1.5 ml-1" style="color: #FAFAFF">תאריך תפוגה (dd.mm.yyyy)</label>
+                <div class="relative">
+                  <input type="text" value="{{formDate}}" onChange="{{onFormDate}}" class="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#0c66d6] transition">
+                  <span class="absolute left-4 top-3.5 text-zinc-400">📅</span>
+                </div>
+              </div>
+              <button type="button" onClick="{{onSubmitForm}}" class="w-full bg-[#0c66d6] text-white font-bold py-3.5 rounded-xl shadow-md mt-6 hover:bg-[#0a58ca] transition">שמור קופון בארנק</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isMarket}}" hint-placeholder-val="{{false}}">
+      <div class="space-y-4">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-black text-zinc-900">שוק הקופונים</h2>
+          <p class="text-sm text-zinc-500 mt-2 px-4 leading-relaxed">הטבות שקיימות במועדונים ובכרטיסי אשראי. הוסיפו לארנק את אלה שמתאימים לכם.</p>
+        </div>
+        <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
+          <sc-for list="{{categories}}" as="cat" hint-placeholder-count="3">
+            <button onClick="{{cat.onSelect}}" class="whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition shadow-sm border {{cat.tabClass}}">{{cat.categoryName}}</button>
+          </sc-for>
+        </div>
+        <div class="relative mt-2">
+          <input type="text" value="{{marketSearch}}" onChange="{{onSearchChange}}" placeholder="חפשו חנות או הטבה..." class="w-full bg-[#f4f5f7] border-none rounded-full px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0c66d6]">
+          <span class="absolute left-4 top-3.5 text-zinc-400">🔍</span>
+        </div>
+        <div class="mt-4 space-y-3">
+          <sc-for list="{{visibleItems}}" as="item" hint-placeholder-count="3">
+            <div class="bg-white border border-zinc-200 rounded-2xl p-4 flex justify-between items-center mb-3 shadow-sm">
+              <div class="text-right">
+                <div class="font-bold text-zinc-900">{{item.storeName}}</div>
+                <div class="text-[#104886] font-bold text-sm mt-0.5">{{item.discountText}}</div>
+                <div class="flex items-center text-xs text-zinc-500 mt-2 gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                  <span>{{item.expirationDate}}</span><span>·</span><span>נותרו {{item.daysRemainingCalc}} ימים</span>
+                </div>
+                <sc-if value="{{item.subText}}"><div class="text-xs text-zinc-400 mt-0.5">{{item.subText}}</div></sc-if>
+              </div>
+              <div>
+                <sc-if value="{{item.isAdded}}">
+                  <button class="bg-zinc-100 text-zinc-500 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1">נוסף ✓</button>
+                </sc-if>
+                <sc-if value="{{item.isAddedFalse}}">
+                  <button onClick="{{item.onAdd}}" class="bg-[#10a345] hover:bg-[#0e8f3d] text-white px-4 py-2 rounded-xl text-sm font-bold transition">+ הוסף לארנק</button>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{noVisibleItems}}"><div class="text-center text-zinc-400 py-10 text-sm">אין קופונים שמתאימים לחיפוש</div></sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isAllCoupons}}" hint-placeholder-val="{{false}}">
+      <div class="space-y-5">
+        <h2 class="text-2xl font-black text-center text-zinc-900">כל הקופונים ({{allCouponsCount}})</h2>
+        <div class="flex justify-center gap-1.5 flex-wrap">
+          <sc-for list="{{filterChips}}" as="fc" hint-placeholder-count="5">
+            <button onClick="{{fc.onClick}}" class="px-3 py-1.5 rounded-full text-xs font-bold transition {{fc.activeClass}}">{{fc.label}}</button>
+          </sc-for>
+        </div>
+        <div class="pt-2">
+          <sc-for list="{{filteredAll}}" as="coupon" hint-placeholder-count="3">
+            <div class="relative rounded-2xl overflow-hidden h-40 mb-4 shadow-md" style="border: 4px solid #1e293b">
+              <div class="absolute top-2 right-2 z-20 flex gap-1.5">
+                <sc-if value="{{coupon.canMarkUsed}}">
+                  <button onClick="{{coupon.onMarkUsed}}" title="סמן כנוצל" class="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white text-sm backdrop-blur-sm">✓</button>
+                </sc-if>
+                <button onClick="{{coupon.onDelete}}" title="מחק קופון" class="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white text-sm backdrop-blur-sm">🗑</button>
+              </div>
+              <div class="relative z-10 p-4 h-full flex flex-col justify-between" style="background-color: #FFC500">
+                <div class="flex justify-between items-start pr-16">
+                  <div class="w-8 h-8 rounded-full bg-white/10 shrink-0"></div>
+                  <div class="text-right">
+                    <div class="text-white font-bold {{coupon.storeNameSizeClass}}" style="text-align: left">{{coupon.storeName}}</div>
+                    <div class="text-[#facc15] font-bold text-sm" style="color: #000000">{{coupon.discountText}}</div>
+                  </div>
+                </div>
+                <div class="flex justify-center">
+                  <sc-if value="{{coupon.code}}">
+                    <button onClick="{{coupon.onCopy}}" onTouchStart="{{coupon.onCopyTouchStart}}" onTouchEnd="{{coupon.onCopyTouchEnd}}" class="bg-white/10 text-[#facc15] monospaced tracking-widest px-6 py-1.5 rounded-full text-lg border border-[#facc15]/30 font-bold" style="color: #080700">
+                      <sc-if value="{{coupon.copied}}">✓ הועתק</sc-if>
+                      <sc-if value="{{coupon.notCopied}}">{{coupon.code}}</sc-if>
+                    </button>
+                  </sc-if>
+                  <sc-if value="{{coupon.codeNote}}">
+                    <span class="bg-white/10 text-white/90 text-xs px-4 py-1.5 rounded-full border border-white/15 text-center" style="color: #101010E6; text-align: right">{{coupon.codeNote}}</span>
+                  </sc-if>
+                </div>
+                <div class="flex justify-between items-end">
+                  <span class="text-[#cbd5e1] text-xs" style="color: #000000">בתוקף עד: {{coupon.expirationDate}}</span>
+                  <span class="bg-[#facc15] text-[#1e293b] text-xs font-bold px-3 py-1 rounded-full">{{coupon.badgeText}}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{noFilteredAll}}"><div class="text-center text-zinc-400 py-10 text-sm">אין קופונים תחת סינון זה</div></sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isSettings}}" hint-placeholder-val="{{false}}">
+      <div class="space-y-6 py-10">
+        <h2 class="text-2xl font-black text-zinc-900 text-center">הגדרות</h2>
+        <div class="max-w-sm mx-auto space-y-3 px-2">
+          <div class="bg-[#f4f5f7] rounded-2xl p-4 text-sm text-zinc-600 text-center">סה"כ {{allCouponsCount}} קופונים שמורים בארנק</div>
+          <div class="bg-[#f4f5f7] rounded-2xl p-4 space-y-4">
+            <button onClick="{{onToggleNotifSection}}" class="w-full flex justify-between items-center">
+              <h3 class="font-bold text-zinc-900 text-sm">🔔 התראות</h3>
+              <span class="text-zinc-400 text-sm">{{notifSectionArrow}}</span>
+            </button>
+            <sc-if value="{{notifSectionOpen}}">
+            <div class="flex justify-between items-center gap-3">
+              <span class="text-sm text-zinc-700">קבל התראות על קופונים שעומדים לפוג</span>
+              <button onClick="{{onToggleNotifications}}" class="w-11 h-6 rounded-full transition {{notifToggleClass}} relative shrink-0">
+                <span class="absolute top-0.5 {{notifKnobClass}} w-5 h-5 bg-white rounded-full transition"></span>
+              </button>
+            </div>
+            <sc-if value="{{notifEnabled}}">
+              <div>
+                <label class="text-xs text-zinc-500 font-medium block mb-1">כמה ימים לפני התפוגה להתריע</label>
+                <input type="range" min="1" max="14" value="{{notifDaysBefore}}" onChange="{{onNotifDaysChange}}" class="w-full">
+                <div class="text-xs text-zinc-600 text-center mt-1">{{notifDaysBefore}} ימים לפני</div>
+              </div>
+            </sc-if>
+            </sc-if>
+          </div>
+          <div class="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+            <button onClick="{{onToggleBackupSection}}" class="w-full flex justify-between items-center">
+              <div class="font-bold text-zinc-800">גיבוי נתונים</div>
+              <span class="text-zinc-400 text-sm">{{backupSectionArrow}}</span>
+            </button>
+            <sc-if value="{{backupSectionOpen}}">
+            <p class="text-xs text-zinc-500 leading-relaxed">כל הנתונים נשמרים אוטומטית מקומית בקובץ SQLite בדפדפן. אפשר גם לשלוח עותק גיבוי כקובץ .sqlite למייל.</p>
+            <button onClick="{{onShareBackup}}" class="w-full bg-[#0c66d6] text-white font-bold py-3 rounded-xl shadow-sm hover:bg-[#0b5cbe] transition">שיתוף גיבוי (SQLite) במייל</button>
+            <sc-if value="{{backupMsg}}"><div class="text-xs text-center text-zinc-500">{{backupMsg}}</div></sc-if>
+            </sc-if>
+          </div>
+          <button onClick="{{onClearAll}}" class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-200 hover:bg-red-100 transition">מחיקת כל הקופונים</button>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <sc-if value="{{scanning}}">
+    <div class="fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center">
+      <video ref="{{videoRef}}" autoplay="" playsinline="" muted="" class="absolute inset-0 w-full h-full object-cover"></video>
+      <div class="absolute inset-0 bg-black/30"></div>
+      <div class="relative z-10 w-64 h-40 border-4 border-white/80 rounded-2xl"></div>
+      <p class="relative z-10 text-white text-sm mt-4 bg-black/50 px-4 py-2 rounded-full">{{scanStatus}}</p>
+      <button onClick="{{stopScan}}" class="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-white/20 text-white text-xl flex items-center justify-center">✕</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{hasToast}}">
+    <div class="fixed bottom-20 inset-x-0 max-w-md mx-auto flex justify-center px-6 z-50">
+      <div class="bg-zinc-900 text-white text-sm px-4 py-2.5 rounded-full shadow-lg text-center">{{toast}}</div>
+    </div>
+  </sc-if>
+
+  <div class="fixed bottom-0 w-full max-w-md bg-white border-t border-zinc-100 flex justify-between px-2 py-2.5 z-40 pb-safe">
+    <button onClick="{{goHome}}" class="flex flex-col items-center gap-1.5 p-1 w-16">
+      <div class="w-11 h-11 rounded-2xl flex items-center justify-center transition {{navHomeSquareClass}}">
+        <svg class="w-5 h-5 {{navHomeIconClass}}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+      </div>
+      <span class="text-xs font-bold {{navHomeTextClass}}">בית</span>
+    </button>
+    <button onClick="{{goAllCoupons}}" class="flex flex-col items-center gap-1.5 p-1 w-16">
+      <div class="w-11 h-11 rounded-2xl flex items-center justify-center transition {{navCouponsSquareClass}}">
+        <svg class="w-5 h-5 {{navCouponsIconClass}}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+      </div>
+      <span class="text-xs font-bold {{navCouponsTextClass}}">הקופונים</span>
+    </button>
+    <button onClick="{{goMarket}}" class="flex flex-col items-center gap-1.5 p-1 w-16">
+      <div class="w-11 h-11 rounded-2xl flex items-center justify-center transition {{navMarketSquareClass}}">
+        <svg class="w-5 h-5 {{navMarketIconClass}}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+      </div>
+      <span class="text-xs font-bold {{navMarketTextClass}}">שוק</span>
+    </button>
+    <button onClick="{{goAddCoupon}}" class="flex flex-col items-center gap-1.5 p-1 w-16">
+      <div class="w-11 h-11 rounded-2xl flex items-center justify-center transition {{navAddSquareClass}}">
+        <svg class="w-5 h-5 {{navAddIconClass}}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      </div>
+      <span class="text-xs font-bold {{navAddTextClass}}">הוספה</span>
+    </button>
+    <button onClick="{{goSettings}}" class="flex flex-col items-center gap-1.5 p-1 w-16">
+      <div class="w-11 h-11 rounded-2xl flex items-center justify-center transition {{navSettingsSquareClass}}">
+        <svg class="w-5 h-5 {{navSettingsIconClass}}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      </div>
+      <span class="text-xs font-bold {{navSettingsTextClass}}">הגדרות</span>
+    </button>
+  </div>
+</div>
+</sc-if></x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  seedCoupons = [
+    { id: '1', storeName: 'זארה', discountText: '20% הנחה', code: '5820-4910', expirationDate: '29.08.2026', status: 'active', imageUrl: null },
+    { id: '2', storeName: 'סופר-פארם', discountText: '50 ₪ מתנה בקנייה מעל 250 ₪', code: null, codeNote: 'הציגו כרטיס Life בקופה', expirationDate: '01.09.2026', status: 'partial', imageUrl: null },
+    { id: '3', storeName: 'סופר-פארם', discountText: '50 ₪ מתנה', code: '8294-1029', expirationDate: '07.09.2026', status: 'active', imageUrl: null }
+  ];
+
+  categories = [
+    { id: 'cat1', categoryName: '👗 אופנה וטיפוח', items: [
+      { id: 'm1', storeName: 'קבוצת FOX (DreamCard)', discountText: '20% הנחה + נקודות', subText: 'דורש: מועדון DreamCard', expirationDate: '15.09.2026' },
+      { id: 'm2', storeName: 'סופר-פארם (Lifestyle)', discountText: '50 ₪ מתנה בקנייה מעל 250 ₪', subText: 'דורש: כרטיס Life', expirationDate: '01.09.2026' },
+      { id: 'm3', storeName: 'GA-DE (ג\'ייד)', discountText: '20% הנחה על כל האתר', subText: '', expirationDate: '05.09.2026' },
+      { id: 'm4', storeName: 'WeShoes', discountText: '5% הנחה אקסטרה', subText: '', expirationDate: '04.09.2026' },
+      { id: 'm7', storeName: 'שיין (SHEIN)', discountText: '45% הנחה להזמנה ראשונה מעל $29', subText: 'מקור: Coupy · ללא תאריך תפוגה קבוע', expirationDate: '31.12.2026' },
+      { id: 'm8', storeName: 'פלטין אקספרס', discountText: '10% הנחה', subText: 'מקור: Coupy · ללא תאריך תפוגה קבוע', expirationDate: '31.12.2026' },
+      { id: 'm9', storeName: 'טרמינל איקס', discountText: '10% הנחה בהרשמה לניוזלטר', subText: 'מקור: המרכז הישראלי לקופונים', expirationDate: '30.09.2026' }
+    ] },
+    { id: 'cat2', categoryName: '🔌 חשמל וטכנולוגיה', items: [
+      { id: 'm5', storeName: 'KSP', discountText: '50 ₪ מתנה לחברי מועדון', subText: '', expirationDate: '10.09.2026' },
+      { id: 'm10', storeName: 'KSP', discountText: '50 ₪ הנחה על הום-סטייל (קוד 50LESS)', subText: 'מקור: המרכז הישראלי לקופונים · מעל 399₪', expirationDate: '31.08.2026' }
+    ] },
+    { id: 'cat3', categoryName: '🍕 מזון ומשלוחים', items: [
+      { id: 'm6', storeName: '10Bis', discountText: '30 ₪ הנחה להזמנה ראשונה', subText: '', expirationDate: '20.09.2026' }
+    ] },
+    { id: 'cat4', categoryName: '🏠 בית ועיצוב', items: [
+      { id: 'm11', storeName: 'טירולר', discountText: '5% הנחה (קוד OFF5)', subText: 'מקור: המרכז הישראלי לקופונים', expirationDate: '31.12.2026' },
+      { id: 'm12', storeName: 'טירולר', discountText: 'משלוח חינם בקנייה מעל 199 ₪', subText: 'מקור: המרכז הישראלי לקופונים', expirationDate: '30.09.2026' },
+      { id: 'm13', storeName: 'המשביר לצרכן', discountText: '5% הנחה', subText: 'מקור: Coupy · ללא תאריך תפוגה קבוע', expirationDate: '31.12.2026' }
+    ] },
+    { id: 'cat5', categoryName: '🏖️ תיירות ונופש', items: [
+      { id: 'm14', storeName: 'פתאל', discountText: 'עד 30% הנחה על מלונות נבחרים', subText: 'מקור: המרכז הישראלי לקופונים', expirationDate: '30.09.2026' },
+      { id: 'm15', storeName: 'ישרוטל', discountText: 'עד 25% הנחה', subText: 'מקור: JEMIX', expirationDate: '31.12.2026' },
+      { id: 'm16', storeName: 'קופונופש פלוס', discountText: 'הנחות על אטרקציות, ספא ובתי מלון', subText: 'מקור: cpnclub · מגוון דילים', expirationDate: '31.12.2026' }
+    ] }
+  ];
+
+  filterChips = [
+    { key: 'active', label: 'פעילים' },
+    { key: 'partial', label: 'נוצלו חלקית' },
+    { key: 'used', label: 'נוצלו' },
+    { key: 'expired', label: 'פג תוקף' },
+    { key: 'all', label: 'הכול' }
+  ];
+
+  videoRef = React.createRef();
+
+  state = {
+    view: 'home',
+    coupons: null,
+    activeMarketTab: 'cat1',
+    marketSearch: '',
+    allCouponsFilter: 'active',
+    copiedId: null,
+    toast: '',
+    scanning: false,
+    scanStatus: '',
+    form: { store: '', code: '', type: 'אחוז הנחה', value: '', date: this.defaultFormDate() },
+    formError: '',
+    homeSortBy: 'expiry',
+    notifSettings: { enabled: true, daysBefore: 3 },
+    notifiedIds: [],
+    onboarded: true,
+    onboardingEmail: '',
+    onboardingError: ''
+  };
+
+  startScan() {
+    this.setState({ scanning: true, scanStatus: 'פותח מצלמה…' });
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then((stream) => {
+      this._stream = stream;
+      const video = this.videoRef.current;
+      if (!video) { this.stopScan(); return; }
+      video.srcObject = stream;
+      video.play();
+      if (!('BarcodeDetector' in window)) {
+        this.setState({ scanStatus: 'הדפדפן לא תומך בסריקה אוטומטית — הזינו ידנית' });
+        return;
+      }
+      this._detector = new BarcodeDetector();
+      this.setState({ scanStatus: 'מקמו את הברקוד במרכז המסך' });
+      this._scanLoop();
+    }).catch(() => {
+      this.setState({ scanning: false, scanStatus: '' });
+      this.showToast('לא ניתן לגשת למצלמה — הזינו קוד ידנית');
+    });
+  }
+
+  _scanLoop() {
+    if (!this.state.scanning || !this._detector) return;
+    const video = this.videoRef.current;
+    if (video && video.readyState >= 2) {
+      this._detector.detect(video).then((codes) => {
+        if (codes && codes.length > 0) {
+          const value = codes[0].rawValue;
+          this.setFormField('code', value);
+          this.stopScan();
+          this.showToast('קוד נסרק בהצלחה: ' + value);
+          return;
+        }
+        if (this.state.scanning) requestAnimationFrame(() => this._scanLoop());
+      }).catch(() => {
+        if (this.state.scanning) requestAnimationFrame(() => this._scanLoop());
+      });
+    } else if (this.state.scanning) {
+      requestAnimationFrame(() => this._scanLoop());
+    }
+  }
+
+  stopScan() {
+    if (this._stream) { this._stream.getTracks().forEach((t) => t.stop()); this._stream = null; }
+    this._detector = null;
+    this.setState({ scanning: false, scanStatus: '' });
+  }
+
+  onPasteClick() {
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+      this.showToast('הדפדפן לא מאפשר קריאה מהלוח — הדביקו ידנית בשדה הקוד');
+      return;
+    }
+    navigator.clipboard.readText().then((text) => {
+      const matches = text.match(/[A-Za-z0-9]{3,}(?:-[A-Za-z0-9]{2,})?/g) || [];
+      const withDigit = matches.filter((m) => /\d/.test(m));
+      const candidate = withDigit.sort((a, b) => b.length - a.length)[0] || matches[0];
+      if (candidate) {
+        this.setFormField('code', candidate);
+        this.showToast('קוד קופון זוהה מהלוח: ' + candidate);
+      } else {
+        this.showToast('לא נמצא קוד בלוח — הדביקו ידנית בשדה הקוד');
+      }
+    }).catch(() => this.showToast('אין הרשאה לגשת ללוח — הדביקו ידנית בשדה הקוד'));
+  }
+
+  idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('CouponWalletSQLite', 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async idbGet(key) {
+    const db = await this.idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('kv', 'readonly');
+      const req = tx.objectStore('kv').get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async idbSet(key, value) {
+    const db = await this.idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async initSqlite() {
+    try {
+      const SQL = await window.initSqlJs({ locateFile: (f) => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/' + f });
+      const saved = await this.idbGet('db');
+      this.sqlDb = saved ? new SQL.Database(new Uint8Array(saved)) : new SQL.Database();
+      this.sqlDb.run('CREATE TABLE IF NOT EXISTS coupons (id TEXT PRIMARY KEY, type TEXT, data TEXT)');
+      this.sqlDb.run('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)');
+      this.syncSqliteFromState();
+    } catch (e) { console.error('sqlite init failed', e); }
+  }
+
+  syncSqliteFromState() {
+    if (!this.sqlDb) return;
+    try {
+      const coupons = this.state.coupons || [];
+      this.sqlDb.run('DELETE FROM coupons');
+      const stmt = this.sqlDb.prepare('INSERT INTO coupons (id, type, data) VALUES (?, ?, ?)');
+      coupons.forEach((c) => { stmt.run([String(c.id), c.status || c.type || 'active', JSON.stringify(c)]); });
+      stmt.free();
+      this.sqlDb.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['notifSettings', JSON.stringify(this.state.notifSettings || {})]);
+      this.persistSqliteToIndexedDB();
+    } catch (e) { console.error('sqlite sync failed', e); }
+  }
+
+  persistSqliteToIndexedDB() {
+    if (!this.sqlDb) return;
+    try {
+      const bytes = this.sqlDb.export();
+      this.idbSet('db', bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+    } catch (e) { console.error('sqlite persist failed', e); }
+  }
+
+  componentDidMount() {
+    this.initSqlite();
+    let coupons = this.seedCoupons;
+    try {
+      const saved = localStorage.getItem('couponWalletCoupons');
+      if (saved) coupons = JSON.parse(saved);
+    } catch (e) {}
+    let notifSettings = { enabled: true, daysBefore: 3 };
+    try {
+      const savedNotif = localStorage.getItem('couponWalletNotifSettings');
+      if (savedNotif) notifSettings = { ...notifSettings, ...JSON.parse(savedNotif) };
+    } catch (e) {}
+    let notifiedIds = [];
+    try {
+      const savedIds = localStorage.getItem('couponWalletNotifiedIds');
+      if (savedIds) notifiedIds = JSON.parse(savedIds);
+    } catch (e) {}
+    let homeSortBy = 'expiry';
+    try {
+      const savedSort = localStorage.getItem('couponWalletSortPref');
+      if (savedSort) homeSortBy = savedSort;
+    } catch (e) {}
+    let onboarded = false;
+    try { onboarded = localStorage.getItem('couponWalletOnboarded') === '1'; } catch (e) {}
+    this.setState({ coupons, notifSettings, notifiedIds, homeSortBy, onboarded }, () => this.checkNotifications(coupons));
+  }
+
+  onOnboardingEmailChange(e) {
+    this.setState({ onboardingEmail: e.target.value, onboardingError: '' });
+  }
+
+  onOnboardingSubmit() {
+    const email = (this.state.onboardingEmail || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.setState({ onboardingError: 'נא להזין כתובת מייל תקינה' });
+      return;
+    }
+    try {
+      localStorage.setItem('couponWalletOnboarded', '1');
+      localStorage.setItem('couponWalletUserEmail', email);
+    } catch (e) {}
+    this.setState({ onboarded: true });
+  }
+
+  setHomeSort(val) {
+    this.setState({ homeSortBy: val });
+    try { localStorage.setItem('couponWalletSortPref', val); } catch (e) {}
+  }
+
+  async onShareBackup() {
+    if (this.sqlDb) this.syncSqliteFromState();
+    const bytes = this.sqlDb ? this.sqlDb.export() : new Uint8Array();
+    const fileName = 'coupon-wallet-backup-' + new Date().toISOString().slice(0, 10) + '.sqlite';
+    const file = new File([bytes], fileName, { type: 'application/x-sqlite3' });
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'גיבוי ארנק קופונים',
+          text: 'קובץ גיבוי לקופונים שלי'
+        });
+        this.setState({ backupMsg: 'הגיבוי שותף בהצלחה' });
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+    const blob = new Blob([bytes], { type: 'application/x-sqlite3' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    const subject = encodeURIComponent('גיבוי ארנק קופונים');
+    const body = encodeURIComponent('הקובץ ' + fileName + ' הורד למכשיר שלך. צרפו אותו למייל זה ושלחו לעצמכם לגיבוי.');
+    window.open('mailto:?subject=' + subject + '&body=' + body, '_blank');
+    this.setState({ backupMsg: 'הקובץ הורד — צרפו אותו למייל שנפתח' });
+  }
+
+  updateNotifSettings(partial) {
+    this.setState((s) => {
+      const notifSettings = { ...s.notifSettings, ...partial };
+      try { localStorage.setItem('couponWalletNotifSettings', JSON.stringify(notifSettings)); } catch (e) {}
+      setTimeout(() => this.syncSqliteFromState(), 0);
+      return { notifSettings };
+    }, () => this.checkNotifications(this.state.coupons || []));
+  }
+
+  checkNotifications(coupons) {
+    const settings = this.state.notifSettings;
+    if (!settings || !settings.enabled) return;
+    if (typeof Notification === 'undefined') return;
+    const notifiedIds = this.state.notifiedIds || [];
+    const dueSoon = (coupons || []).filter((c) => {
+      if (c.status === 'used') return false;
+      const dr = this.daysRemaining(c.expirationDate);
+      return dr >= 0 && dr <= (settings.daysBefore ?? 3) && !notifiedIds.includes(c.id);
+    });
+    if (dueSoon.length === 0) return;
+    const fire = () => {
+      dueSoon.forEach((c) => {
+        try { new Notification('קופון עומד לפוג', { body: c.storeName + ' - ' + c.discountText }); } catch (e) {}
+      });
+      const updatedIds = [...notifiedIds, ...dueSoon.map((c) => c.id)];
+      this.setState({ notifiedIds: updatedIds });
+      try { localStorage.setItem('couponWalletNotifiedIds', JSON.stringify(updatedIds)); } catch (e) {}
+    };
+    if (Notification.permission === 'granted') fire();
+    else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then((perm) => { if (perm === 'granted') fire(); });
+    }
+  }
+
+  persist(coupons) {
+    try { localStorage.setItem('couponWalletCoupons', JSON.stringify(coupons)); } catch (e) {}
+    this.syncSqliteFromState();
+  }
+
+  updateCoupons(updater) {
+    this.setState((s) => {
+      const coupons = updater(s.coupons || []);
+      this.persist(coupons);
+      return { coupons };
+    });
+  }
+
+  parseDMY(str) {
+    const parts = str.split('.').map(Number);
+    return new Date(parts[2], parts[1] - 1, parts[0]);
+  }
+
+  daysRemaining(expStr) {
+    const exp = this.parseDMY(expStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    exp.setHours(0, 0, 0, 0);
+    return Math.round((exp - today) / 86400000);
+  }
+
+  baseStoreName(name) {
+    return name.replace(/\s*\([^)]*\)\s*/g, '').trim();
+  }
+
+  defaultFormDate() {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return dd + '.' + mm + '.' + d.getFullYear();
+  }
+
+  showToast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState({ toast: '' }), 2500);
+  }
+
+  copyCode(coupon) {
+    if (!coupon.code) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(coupon.code).catch(() => {});
+    }
+    this.setState({ copiedId: coupon.id });
+    clearTimeout(this._copyTimer);
+    this._copyTimer = setTimeout(() => {
+      this.setState((s) => (s.copiedId === coupon.id ? { copiedId: null } : null));
+    }, 1800);
+  }
+
+  markUsed(id) {
+    this.updateCoupons((coupons) => coupons.map((c) => (c.id === id ? { ...c, status: 'used' } : c)));
+  }
+
+  deleteCoupon(id) {
+    this.updateCoupons((coupons) => coupons.filter((c) => c.id !== id));
+    this.showToast('הקופון נמחק');
+  }
+
+  addFromMarket(item) {
+    const base = this.baseStoreName(item.storeName);
+    const already = (this.state.coupons || []).some((c) => c.storeName === base);
+    if (already) return;
+    const newCoupon = {
+      id: 'm_' + item.id + '_' + Date.now(),
+      storeName: base,
+      discountText: item.discountText,
+      code: null,
+      codeNote: item.subText || 'הציגו כרטיס/פרטי מועדון בקופה',
+      expirationDate: item.expirationDate,
+      status: 'active',
+      imageUrl: null
+    };
+    this.updateCoupons((coupons) => [newCoupon, ...coupons]);
+    this.showToast(base + ' נוסף לארנק ✓');
+  }
+
+  setFormField(field, value) {
+    this.setState((s) => ({ form: { ...s.form, [field]: value } }));
+  }
+
+  submitManualForm() {
+    const f = this.state.form;
+    if (!f.store.trim() || !f.code.trim()) {
+      this.setState({ formError: 'נא למלא שם חנות וקוד קופון' });
+      return;
+    }
+    let discountText;
+    if (f.type === 'אחוז הנחה') discountText = (f.value || '0') + '% הנחה';
+    else if (f.type === 'סכום קבוע') discountText = (f.value || '0') + ' ₪ הנחה';
+    else discountText = f.value || 'הטבה במתנה';
+
+    const newCoupon = {
+      id: 'manual_' + Date.now(),
+      storeName: f.store.trim(),
+      discountText,
+      code: f.code.trim(),
+      expirationDate: f.date || this.defaultFormDate(),
+      status: 'active',
+      imageUrl: null
+    };
+    this.updateCoupons((coupons) => [newCoupon, ...coupons]);
+    this.setState({
+      view: 'home',
+      formError: '',
+      form: { store: '', code: '', type: 'אחוז הנחה', value: '', date: this.defaultFormDate() }
+    });
+    this.showToast('הקופון נשמר בארנק ✓');
+  }
+
+  enrichCoupon(c) {
+    const dr = this.daysRemaining(c.expirationDate);
+    let displayStatus = c.status;
+    if (c.status !== 'used' && dr < 0) displayStatus = 'expired';
+    let badgeText, badgeColorClass, borderColorClass;
+    let badgeColorClassOnDark;
+    if (displayStatus === 'used') { badgeText = 'נוצל'; badgeColorClass = 'text-zinc-500'; badgeColorClassOnDark = 'text-white/70'; borderColorClass = 'border-r-zinc-300'; }
+    else if (displayStatus === 'expired') { badgeText = 'פג תוקף'; badgeColorClass = 'text-red-500'; badgeColorClassOnDark = 'text-red-100'; borderColorClass = 'border-r-red-500'; }
+    else if (displayStatus === 'partial') { badgeText = 'נוצל חלקית'; badgeColorClass = 'text-[#3b82f6]'; badgeColorClassOnDark = 'text-blue-100'; borderColorClass = 'border-r-[#3b82f6]'; }
+    else {
+      const criticalDays = (this.state.notifSettings && this.state.notifSettings.daysBefore) || 3;
+      const critical = dr <= criticalDays;
+      const urgent = dr <= 10;
+      badgeText = 'נותרו ' + dr + ' ימים';
+      if (critical) { badgeColorClass = 'text-red-500'; badgeColorClassOnDark = 'text-red-300'; borderColorClass = 'border-r-red-500'; }
+      else if (urgent) { badgeColorClass = 'text-[#eab308]'; badgeColorClassOnDark = 'text-yellow-200'; borderColorClass = 'border-r-[#facc15]'; }
+      else { badgeColorClass = 'text-[#16a34a]'; badgeColorClassOnDark = 'text-white/90'; borderColorClass = 'border-r-[#4ade80]'; }
+    }
+    const copied = this.state.copiedId === c.id;
+    return {
+      ...c,
+      displayStatus,
+      badgeText,
+      badgeColorClass,
+      badgeColorClassOnDark,
+      borderColorClass,
+      hasImage: !!c.imageUrl,
+      noImage: !c.imageUrl,
+      initial: c.storeName.trim().charAt(0),
+      storeNameSizeClass: c.storeName.trim().length > 14 ? 'text-base' : 'text-lg',
+      canMarkUsed: displayStatus === 'active' || displayStatus === 'partial',
+      copied,
+      notCopied: !copied,
+      onCopy: () => this.copyCode(c),
+      onCopyTouchStart: () => { this._touchTimer = setTimeout(() => this.copyCode(c), 550); },
+      onCopyTouchEnd: () => clearTimeout(this._touchTimer),
+      onMarkUsed: () => this.markUsed(c.id),
+      onDelete: () => this.deleteCoupon(c.id)
+    };
+  }
+
+  renderVals() {
+    const coupons = this.state.coupons || [];
+    const enriched = coupons.map((c) => this.enrichCoupon(c));
+    let homeCoupons = enriched.filter((c) => c.displayStatus === 'active' || c.displayStatus === 'partial');
+    const sortBy = this.state.homeSortBy || 'expiry';
+    if (sortBy === 'name') homeCoupons = [...homeCoupons].sort((a, b) => a.storeName.localeCompare(b.storeName, 'he'));
+    else if (sortBy === 'expiry') homeCoupons = [...homeCoupons].sort((a, b) => this.daysRemaining(a.expirationDate) - this.daysRemaining(b.expirationDate));
+    const filteredAll = enriched.filter((c) => (this.state.allCouponsFilter === 'all' ? true : c.displayStatus === this.state.allCouponsFilter));
+
+    const addedBaseNames = new Set(coupons.map((c) => c.storeName));
+    const enrichedCategories = this.categories.map((cat) => ({
+      ...cat,
+      tabClass: this.state.activeMarketTab === cat.id ? 'bg-[#0c66d6] text-white border-[#0c66d6]' : 'bg-[#f4f5f7] text-zinc-600 border-transparent',
+      onSelect: () => this.setState({ activeMarketTab: cat.id }),
+      items: cat.items.map((item) => {
+        const base = this.baseStoreName(item.storeName);
+        const isAdded = addedBaseNames.has(base);
+        return {
+          ...item,
+          isAdded,
+          isAddedFalse: !isAdded,
+          daysRemainingCalc: this.daysRemaining(item.expirationDate),
+          onAdd: () => this.addFromMarket(item)
+        };
+      })
+    }));
+
+    const search = this.state.marketSearch.trim();
+    const activeCat = enrichedCategories.find((c) => c.id === this.state.activeMarketTab) || enrichedCategories[0];
+    const visibleItems = (activeCat ? activeCat.items : []).filter(
+      (item) => !search || item.storeName.includes(search) || item.discountText.includes(search)
+    );
+
+    const allItemsFlat = enrichedCategories.flatMap((c) => c.items);
+    const homePreviewItems = allItemsFlat.filter((i) => !i.isAdded).slice(0, 2);
+
+    const f = this.state.form;
+    const view = this.state.view;
+
+    return {
+      isHome: view === 'home',
+      isAddCoupon: view === 'addCoupon',
+      isMarket: view === 'market',
+      isAllCoupons: view === 'allCoupons',
+      isSettings: view === 'settings',
+      goHome: () => this.setState({ view: 'home' }),
+      goAddCoupon: () => this.setState({ view: 'addCoupon' }),
+      goMarket: () => this.setState({ view: 'market' }),
+      goAllCoupons: () => this.setState({ view: 'allCoupons' }),
+      goSettings: () => this.setState({ view: 'settings' }),
+      activeCount: homeCoupons.length,
+      homeCoupons,
+      hasHomeCoupons: homeCoupons.length > 0,
+      noHomeCoupons: homeCoupons.length === 0,
+      homePreviewItems,
+      hasHomePreview: homePreviewItems.length > 0,
+      noHomePreview: homePreviewItems.length === 0,
+      allCouponsCount: coupons.length,
+      filteredAll,
+      noFilteredAll: filteredAll.length === 0,
+      filterChips: this.filterChips.map((fc) => ({
+        ...fc,
+        activeClass: this.state.allCouponsFilter === fc.key ? 'bg-[#0c66d6] text-white shadow-sm' : 'bg-white border border-zinc-200 text-zinc-500',
+        onClick: () => this.setState({ allCouponsFilter: fc.key })
+      })),
+      categories: enrichedCategories,
+      visibleItems,
+      noVisibleItems: visibleItems.length === 0,
+      marketSearch: this.state.marketSearch,
+      onSearchChange: (e) => this.setState({ marketSearch: e.target.value }),
+      formStore: f.store,
+      formCode: f.code,
+      formType: f.type,
+      formValue: f.value,
+      formDate: f.date,
+      formError: this.state.formError,
+      onFormStore: (e) => this.setFormField('store', e.target.value),
+      onFormCode: (e) => this.setFormField('code', e.target.value),
+      onFormType: (e) => this.setFormField('type', e.target.value),
+      onFormValue: (e) => this.setFormField('value', e.target.value),
+      onFormDate: (e) => this.setFormField('date', e.target.value),
+      onSubmitForm: () => this.submitManualForm(),
+      startScan: () => this.startScan(),
+      stopScan: () => this.stopScan(),
+      onPasteClick: () => this.onPasteClick(),
+      scanning: this.state.scanning,
+      scanStatus: this.state.scanStatus,
+      videoRef: this.videoRef,
+      onClearAll: () => { if (window.confirm('למחוק את כל הקופונים לצמיתות?')) this.updateCoupons(() => []); },
+      homeSortBy: this.state.homeSortBy,
+      onHomeSortChange: (e) => this.setHomeSort(e.target.value),
+      notifEnabled: this.state.notifSettings.enabled,
+      notifDaysBefore: this.state.notifSettings.daysBefore,
+      onToggleNotifications: () => this.updateNotifSettings({ enabled: !this.state.notifSettings.enabled }),
+      onNotifDaysChange: (e) => this.updateNotifSettings({ daysBefore: parseInt(e.target.value, 10) }),
+      notifToggleClass: this.state.notifSettings.enabled ? 'bg-[#0c66d6]' : 'bg-zinc-300',
+      notifKnobClass: this.state.notifSettings.enabled ? 'left-[22px]' : 'left-0.5',
+      onShareBackup: () => this.onShareBackup(),
+      backupMsg: this.state.backupMsg,
+      notifSectionOpen: !!this.state.notifSectionOpen,
+      notifSectionArrow: this.state.notifSectionOpen ? '▲' : '▼',
+      onToggleNotifSection: () => this.setState((s) => ({ notifSectionOpen: !s.notifSectionOpen })),
+      backupSectionOpen: !!this.state.backupSectionOpen,
+      backupSectionArrow: this.state.backupSectionOpen ? '▲' : '▼',
+      onToggleBackupSection: () => this.setState((s) => ({ backupSectionOpen: !s.backupSectionOpen })),
+      toast: this.state.toast,
+      hasToast: !!this.state.toast,
+      navHomeSquareClass: view === 'home' ? 'bg-[#0c66d6]' : 'bg-zinc-100',
+      navHomeIconClass: view === 'home' ? 'text-white' : 'text-zinc-400',
+      navHomeTextClass: view === 'home' ? 'text-[#0b5cbe]' : 'text-zinc-700',
+      navCouponsSquareClass: view === 'allCoupons' ? 'bg-[#0c66d6]' : 'bg-zinc-100',
+      navCouponsIconClass: view === 'allCoupons' ? 'text-white' : 'text-zinc-400',
+      navCouponsTextClass: view === 'allCoupons' ? 'text-[#0b5cbe]' : 'text-zinc-700',
+      navMarketSquareClass: view === 'market' ? 'bg-[#0c66d6]' : 'bg-zinc-100',
+      navMarketIconClass: view === 'market' ? 'text-white' : 'text-zinc-400',
+      navMarketTextClass: view === 'market' ? 'text-[#0b5cbe]' : 'text-zinc-700',
+      navAddSquareClass: view === 'addCoupon' ? 'bg-[#0c66d6]' : 'bg-zinc-100',
+      navAddIconClass: view === 'addCoupon' ? 'text-white' : 'text-zinc-400',
+      navAddTextClass: view === 'addCoupon' ? 'text-[#0b5cbe]' : 'text-zinc-700',
+      navSettingsSquareClass: view === 'settings' ? 'bg-[#0c66d6]' : 'bg-zinc-100',
+      navSettingsIconClass: view === 'settings' ? 'text-white' : 'text-zinc-400',
+      navSettingsTextClass: view === 'settings' ? 'text-[#0b5cbe]' : 'text-zinc-700',
+      showOnboarding: !this.state.onboarded,
+      showApp: this.state.onboarded,
+      onboardingEmail: this.state.onboardingEmail,
+      onboardingError: this.state.onboardingError,
+      onOnboardingEmailChange: (e) => this.onOnboardingEmailChange(e),
+      onOnboardingSubmit: () => this.onOnboardingSubmit()
+    };
+  }
+}
+</script>
+</body>
+</html>
